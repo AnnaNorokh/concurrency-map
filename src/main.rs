@@ -7,6 +7,7 @@
 #![allow(unused_assignments)]
 #![feature(linked_list_remove)]
 #![feature(generic_const_exprs)]
+#![feature(test)]
 
 
 use std::collections::LinkedList;
@@ -170,8 +171,10 @@ where
         let mut i = 0;
 
         self.map[index].unlock();
+
         if Self::contains_key(&self, &set.0) {
             self.map[index].lock();
+
             for x in self.map[index].list.iter() {                                      // iter in node list 
                 if x.0 == set.0 {                                                                //if keys are equal  
                     mut_self.map[index].list.remove(i);
@@ -181,10 +184,12 @@ where
                 }
                 i+=1;
             }
+
+            self.map[index].unlock();
         }
 
+        self.map[index].lock();
         mut_self.map[index].list.push_front(set);
-
         self.map[index].unlock();
         None
     }
@@ -350,3 +355,73 @@ mod tests {
 
 }
 
+#[cfg(test)]
+mod benchmarks {
+    extern crate test;
+    use super::*;
+    use std::sync::{Arc, Barrier, atomic::Ordering};
+
+    #[bench]
+    fn insert_into_map(b: &mut test::Bencher) {
+        let map: LocklessMap<u32,u32> = LocklessMap::with_capacity(1_000_000);
+
+        let mut key: u32 = 0;
+        b.iter(|| {
+            test::black_box(map.insert(key, key));
+            key += 1;
+        });
+        println!("did {} measurements", key); // key increases by one with each measurement
+    }
+
+    #[bench]
+    fn insert_into_map_identical_keys(b: &mut test::Bencher) {
+        let map: LocklessMap<u32,u32> = LocklessMap::with_capacity(1_000_000);
+
+        let mut key: u32 = 0;
+        b.iter(|| {
+            test::black_box(map.insert(0, key));
+            key += 1;
+        });
+        println!("did {} measurements", key); // key increases by one with each measurement
+    }
+
+    #[bench]
+    fn insert_into_map_concurrent(b: &mut test::Bencher) {
+        let map: Arc<LocklessMap<u32,u32>> = Arc::new(LocklessMap::with_capacity(1_000_000));
+
+        const INSERTERS_CNT: usize = 2;
+
+        let mut inserters = Vec::with_capacity(INSERTERS_CNT);
+        let barrier = Arc::new(Barrier::new(INSERTERS_CNT + 1));
+        let is_done = Arc::new(AtomicBool::new(false));
+
+        for _ in 0..INSERTERS_CNT {
+            let map = map.clone();
+            let barrier = barrier.clone();
+            let is_done = is_done.clone();
+            inserters.push(std::thread::spawn(move || {
+                barrier.wait(); // Wait until benchmark starts
+                let mut key: u32 = 0;
+                while !is_done.load(Ordering::Acquire) {
+                    // Loop until benchmark stops
+                    map.insert(key, key);
+                }
+            }));
+        }
+
+        barrier.wait(); // Tell inserter threads to start
+
+        let mut key: u32 = 0;
+        b.iter(|| {
+            test::black_box(map.insert(key, key));
+            key += 1;
+        });
+
+        is_done.store(true, Ordering::Release); // Tell inserter threads to stop
+        for inserter in inserters {
+            inserter.join().unwrap();
+        }
+
+        println!("did {} measurements", key); // key increases by one with each measurement
+    }
+}

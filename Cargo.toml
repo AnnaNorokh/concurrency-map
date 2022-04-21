@@ -8,3 +8,9 @@ edition = "2021"
 [dependencies]
 rand = "0.8.5"
 xxhash-rust = "0.8.4"
+
+[profile.release]
+opt-level = 3
+
+[profile.dev]
+opt-level = 3
