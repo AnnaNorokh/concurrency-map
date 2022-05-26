@@ -14,3 +14,11 @@ opt-level = 3
 
 [profile.dev]
 opt-level = 3
+
+[lib]
+name = "lib"
+path = "src/lib.rs"
+test = true
+bench = true
+
+[features]

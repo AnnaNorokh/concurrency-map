@@ -206,7 +206,8 @@ pub fn java_hash(key: &str) -> i64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::{additive_hash, rotating_hash, one_by_one_hash, bernstein, int_hash, rs_hash, js_hash, pjw_hash, elf_hash, bkdr_hash, sdbm_hash, djb_hash, dek_hash, ap_hash, java_hash};
+    //use crate::{additive_hash, rotating_hash, one_by_one_hash, bernstein, int_hash, rs_hash, js_hash, 
+        //pjw_hash, elf_hash, bkdr_hash, sdbm_hash, djb_hash, dek_hash, ap_hash, java_hash};
 
     #[test]
     fn it_works() {

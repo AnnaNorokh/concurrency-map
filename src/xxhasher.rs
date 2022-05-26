@@ -75,7 +75,7 @@ pub mod hasher {
         //assert!(std::mem::size_of::<K>() % std::mem::size_of::<u64>() == 0);
         //println!("{:?} / {:?}", std::mem::size_of::<K>(), std::mem::size_of::<u64>());
         let mut hash = 0;
-        //println!("value1 {:?}", value);
+        
         if std::mem::size_of::<K>() / std::mem::size_of::<u64>() > 0 {
             let array = unsafe {&*(value as *const K as *const [u64 ; std::mem::size_of::<K>() / std::mem::size_of::<u64>()])};
             
@@ -84,7 +84,6 @@ pub mod hasher {
             }
         } else {
             let value = unsafe {&*(value as *const K as *const u64 )};
-            //println!("v {}", *value);
             hash = xxhash(*value);
         }
 
